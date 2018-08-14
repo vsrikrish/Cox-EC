@@ -1,3 +1,14 @@
+###############################################################################################################
+# plot_Extended_Figs.R                                                                                        #
+#                                                                                                             #
+# This script plots AIC values for all three models ("normal", "log-normal", "heavy-tailed/t"                 #
+#   against time window length (Extended Fig 1), as well as plotting tail probabilities for the               #
+#    normal and log-normal models against time window length (Extended Fig 2).                                #
+#                                                                                                             #
+# It assumes that mcmc_driver.R and sample_ECS.R have been run for all window lengths and model types.        #
+###############################################################################################################
+
+
 library(reshape2)
 library(ggplot2)
 library(RColorBrewer)

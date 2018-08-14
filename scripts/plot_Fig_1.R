@@ -1,3 +1,12 @@
+###############################################################################################################
+# plot_Fig_1.R                                                                                                #
+#                                                                                                             #
+# This script plots the posterior predictive distributions for each model.                                    #
+# It assumes that mcmc_driver.R and sample_ECS.R have been run for all model types for the desired window     #
+#   length. The default window length is 55 years, based on Cox et al (Nature, 2018).                         #
+###############################################################################################################
+
+# load libraries
 library(reshape2)
 library(RColorBrewer)
 library(ggplot2)
@@ -5,20 +14,19 @@ library(ggplot2)
 #library(gridExtra)
 #library(gtable)
 
+# set paths
 out.path <- 'output'
 fig.path <- 'figures'
 
-print('Reading in data...')
 # read sampled ECS values
-win.len <- 55
+win.len <- 55 # set window length
 ecs.samp <- readRDS(file.path(out.path, 'samples', paste('ecs_samp-', win.len, '.rds', sep='')))
-samp.melt <- melt(ecs.samp)
+samp.melt <- melt(ecs.samp) # melt posterior predictive sample vector
 colnames(samp.melt) <- c('sample', 'distribution')
 samp.melt$distribution <- factor(samp.melt$distribution, levels=c('normal', 'log-normal', 't'))
 
 cols <- brewer.pal(4, 'Dark2')
 
-print('Plotting PDFs...')
 # plot entire distribution
 p <- ggplot(samp.melt)+ stat_density(aes(x=sample, y=..density.., color=distribution, linetype=distribution), size=1, geom='line', position='identity') +  theme_bw(base_size=7, base_family='sans') + scale_y_continuous('Density', expand=c(0, 0)) + theme(axis.text.y=element_blank(), axis.ticks.y=element_blank(), axis.text.x=element_text(size=6), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position='bottom', legend.key.width=unit(2, "lines")) + scale_x_continuous('ECS (K)', breaks=0:8, expand=c(0,0), limits=c(-10, 20)) + annotate('rect', xmin=1.5, xmax=4.5, ymin=0, ymax=0.8, alpha=.1) + scale_color_manual(name='Model', values=c('normal'=cols[1], 'log-normal'=cols[2], 't'=cols[3]), labels=c('Normal', 'Log-normal', 'Heavy-Tailed'), breaks=c('normal', 'log-normal', 't')) + scale_linetype_manual(name='Model', values=c('normal'='solid', 'log-normal'='dashed', 't'='dotted'), labels=c('Normal', 'Log-normal', 'Heavy-Tailed'), breaks=c('normal', 'log-normal', 't'))
 

@@ -1,4 +1,19 @@
-# define log-likelihood function
+###############################################################################################################
+# likelihood.R                                                                                                #
+#                                                                                                             #
+# This script contains the log-likelihood, log-prior, and log-posterior functions.                            #
+###############################################################################################################
+
+
+# log-likelihood function
+# inputs:
+#   1) pars: vector of parameters
+#   2) parnames: vector of parameter names (should be c('a', 'b', 'scale')).
+#   3) dat: data frame with columns 'ECS' (response) and 'Psi' (covariate). These
+#           should be log-transformed if needed.
+#   4) density.name: 'normal,' 'log-normal', or 't' (used to select density function and truncate if necessary)
+# returns:
+#   1) log-likelihood value
 log.lik <- function(pars, parnames, dat, density.name) {
   # extract variables
   a <- pars[match('a', parnames)]
@@ -19,7 +34,16 @@ log.lik <- function(pars, parnames, dat, density.name) {
   ll
 }
 
-# define priors
+# log-prior density function
+# prior for location parameters ('a': intercept, 'b': linear coefficient) are wide normal priors (sd=10) around
+#   the MLE estimate for held-out data.
+# prior for scale parameters is gamma(1,2).
+# inputs:
+#   1) pars: vector of parameters
+#   2) parnames: vector of parameter names (should be c('a', 'b', 'scale')
+#   3) mle: MLE estimate for held-out data.
+# returns:
+#   1) log-prior across all parameters
 log.pri <- function(pars, parnames, mle) {
   lp <- 0
   for (i in 1:length(parnames)) {
@@ -40,9 +64,18 @@ log.pri <- function(pars, parnames, mle) {
   lp
 }
 
-# define posterior
+# log-posterior density function
+# inputs:
+#   1) pars: vector of parameter values
+#   2) parnames: vectof of parameter names (should be c('a', 'b', 'scale'))
+#   3) dat: data frame with columns 'ECS' (response) and 'Psi' (covariate). These
+#           should be log-transformed if needed.
+#   4) mle: MLE estimate for held-out data.
+#   5) density.name: 'normal,' 'log-normal', or 't' (used to select density function and truncate if necessary)
 log.post <- function(pars, parnames, dat, mle, density.name) {
+  # compute log-prior density
   l.pri <- log.pri(pars, parnames, mle)
+  # if log-prior density is infinite, don't bother computing likelihood.
   if (is.finite(l.pri)) {
     l.lik <- log.lik(pars, parnames, dat, density.name)
   } else {
@@ -52,7 +85,7 @@ log.post <- function(pars, parnames, dat, mle, density.name) {
   l.pri + l.lik
 }
 
-# define negative log likelihood for DE Optim
+# negative log likelihood for DE Optim
 neg.log.lik <- function(pars, parnames, dat, density.name) {
   -1*log.lik(pars, parnames, dat, density.name)
 }
