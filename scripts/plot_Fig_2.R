@@ -1,9 +1,9 @@
 ###############################################################################################################
-# plot_Extended_Figs.R                                                                                        #
+# plot_Fig_2.R                                                                                        #
 #                                                                                                             #
 # This script plots AIC values for all three models ("normal", "log-normal", "heavy-tailed/t"                 #
-#   against time window length (Extended Fig 1), as well as plotting tail probabilities for the               #
-#    normal and log-normal models against time window length (Extended Fig 2).                                #
+#   against time window length (panel A), as well as plotting tail probabilities for the               #
+#    normal and log-normal models against time window length (panel B).                                #
 #                                                                                                             #
 # It assumes that mcmc_driver.R and sample_ECS.R have been run for all window lengths and model types.        #
 ###############################################################################################################
@@ -12,6 +12,10 @@
 library(reshape2)
 library(ggplot2)
 library(RColorBrewer)
+library(grid)
+library(gridExtra)
+library(gtable)
+
 
 R.path <- 'scripts'
 out.path <- 'output'
@@ -63,27 +67,22 @@ model.melt <- melt(model.stats, id.var=c('win.len', 'model'))
 
 cols <- brewer.pal(4, 'Dark2')
 
-# plot Extended Data Figure 1 (AIC vs. window length)
+# plot panel A (AIC vs. window length)
 
-p <- ggplot(model.melt[model.melt[,'variable'] == 'AIC',]) + geom_line(aes(x=win.len, y=value, color=model), size=1) + geom_point(aes(x=win.len, y=value, color=model), shape=1) +  theme_bw(base_size=7, base_family='sans') + scale_y_continuous('Akaike Information Criteron', expand=c(0, 0), limits=c(28, 45), breaks=seq(25, 45, 5)) + theme(axis.text=element_text(size=6), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position='right', legend.key.width=unit(2, "lines")) + scale_x_continuous('Temperature Series Window Length (yrs)', breaks=seq(45, 75, 5), expand=c(0,0)) + scale_color_manual(name='Distribution', values=c('normal'=cols[1], 'log-normal'=cols[2], 't'=cols[3]), labels=c('Normal', 'Log-normal', 'Heavy-Tailed'), breaks=c('normal', 'log-normal', 't'))
+p1 <- ggplot(model.melt[model.melt[,'variable'] == 'AIC',]) + geom_line(aes(x=win.len, y=value, color=model), size=1) + geom_point(aes(x=win.len, y=value, color=model), shape=1) +  theme_bw(base_size=7, base_family='sans') + scale_y_continuous('Akaike Information Criteron', expand=c(0, 0), limits=c(28, 45), breaks=seq(25, 45, 5)) + theme(axis.text=element_text(size=6), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position='right', legend.key.width=unit(2, "lines")) + scale_x_continuous('Temperature Series Window Length (yrs)', breaks=seq(45, 75, 5), expand=c(0,0)) + scale_color_manual(name='Distribution', values=c('normal'=cols[1], 'log-normal'=cols[2], 't'=cols[3]), labels=c('Normal', 'Log-normal', 'Heavy-Tailed'), breaks=c('normal', 'log-normal', 't'))
 
-png(file.path(fig.path, 'Extended_Fig_1.png'), height=64, width=89, unit='mm', res=600)
-print(p)
+# plot panel B (LT/RT probabilities vs. window length)
+
+p2 <- ggplot(model.melt[model.melt[,'variable'] != 'AIC' & model.melt[,'model'] != 't',]) + geom_line(aes(x=win.len, y=value, color=model, linetype=variable), size=1) +  geom_point(aes(x=win.len, y=value, color=model, shape=variable)) + theme_bw(base_size=7, base_family='sans') + scale_y_continuous('Tail Probability', labels=scales::percent, expand=c(0, 0), limits=c(0, .05)) + theme(axis.text=element_text(size=6), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position='right', legend.key.width=unit(2, "lines")) + scale_x_continuous('Temperature Series Window Length (yrs)', breaks=seq(45, 75, 5), expand=c(0,0)) + scale_color_manual(name='Distribution', values=c('normal'=cols[1], 'log-normal'=cols[2]), labels=c('Normal', 'Log-normal'), breaks=c('normal', 'log-normal')) + scale_linetype_manual(name='Tail', values=c('LT'='solid', 'RT'='dashed'), labels=c('ECS < 1.5K', 'ECS > 4.5K'), breaks=c('LT', 'RT')) + scale_shape_manual(name='Tail', values=c('LT'=1, 'RT'=2), labels=c('ECS < 1.5K', 'ECS > 4.5K'), breaks=c('LT', 'RT'))
+
+# add panel labels
+p1 <- arrangeGrob(p1, top=textGrob('a', x=unit(0.01, 'npc'), y=unit(0, 'npc'),just=c('left', 'top'), gp=gpar(col='black', fontsize=8, fontfamily='sans', fontface='bold')))
+p2 <- arrangeGrob(p2, top=textGrob('b', x=unit(0.01, 'npc'), y=unit(0, 'npc'),just=c('left', 'top'), gp=gpar(col='black', fontsize=8, fontfamily='sans', fontface='bold')))
+
+png(file.path(fig.path, 'Fig_2.png'), height=128, width=89, unit='mm', res=600)
+grid.arrange(p1, p2, ncol=1, heights=c(1, 1))
 dev.off()
 
-pdf(file.path(fig.path, 'Extended_Fig_1.pdf'), height=2.5, width=3.5)
-print(p)
+pdf(file.path(fig.path, 'Fig_2.pdf'), height=5, width=3.5)
+grid.arrange(p1, p2, ncol=1, heights=c(1, 1))
 dev.off()
-
-# plot Extended Data Figure 2 (LT/RT probabilities vs. window length)
-
-p <- ggplot(model.melt[model.melt[,'variable'] != 'AIC' & model.melt[,'model'] != 't',]) + geom_line(aes(x=win.len, y=value, color=model, linetype=variable), size=1) +  geom_point(aes(x=win.len, y=value, color=model, shape=variable)) + theme_bw(base_size=7, base_family='sans') + scale_y_continuous('Tail Probability', labels=scales::percent, expand=c(0, 0), limits=c(0, .05)) + theme(axis.text=element_text(size=6), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), legend.position='right', legend.key.width=unit(2, "lines")) + scale_x_continuous('Temperature Series Window Length (yrs)', breaks=seq(45, 75, 5), expand=c(0,0)) + scale_color_manual(name='Distribution', values=c('normal'=cols[1], 'log-normal'=cols[2]), labels=c('Normal', 'Log-normal'), breaks=c('normal', 'log-normal')) + scale_linetype_manual(name='Tail', values=c('LT'='solid', 'RT'='dashed'), labels=c('ECS < 1.5K', 'ECS > 4.5K'), breaks=c('LT', 'RT')) + scale_shape_manual(name='Tail', values=c('LT'=1, 'RT'=2), labels=c('ECS < 1.5K', 'ECS > 4.5K'), breaks=c('LT', 'RT'))
-
-png(file.path(fig.path, 'Extended_Fig_2.png'), height=64, width=89, unit='mm', res=600)
-print(p)
-dev.off()
-
-pdf(file.path(fig.path, 'Extended_Fig_2.pdf'), height=2.5, width=3.5)
-print(p)
-dev.off()
-
